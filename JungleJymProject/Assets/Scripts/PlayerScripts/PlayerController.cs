@@ -25,6 +25,12 @@ public class PlayerController : MonoBehaviour
     private float moveInput;
     private float turnInput;
 
+    [Header("Firing Settings")]
+    [SerializeField] private GameObject projectilePrefab; // Prefab for the projectile
+    [SerializeField] private Transform firePoint; // Point where the projectile is instantiated
+    [SerializeField] private float fireForce = 20f; // Force applied to the projectile
+
+
     private void Start()
     {
        controller = GetComponent<CharacterController>();
@@ -34,6 +40,7 @@ public class PlayerController : MonoBehaviour
     {
         InputManagement();
         Movement();
+        Fire();
         
     }
 
@@ -97,5 +104,22 @@ public class PlayerController : MonoBehaviour
         moveInput = Input.GetAxis("Vertical");
         turnInput = Input.GetAxis("Horizontal");
     }
+
+    private void Fire()
+{
+    if (Input.GetButtonDown("Fire1")) // "Fire1" is typically the left mouse button or Ctrl
+    {
+        // Instantiate the projectile
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+
+        // Add force to the projectile
+        Rigidbody rb = projectile.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.AddForce(firePoint.forward * fireForce, ForceMode.Impulse);
+        }
+    }
+}
+
 
 }
