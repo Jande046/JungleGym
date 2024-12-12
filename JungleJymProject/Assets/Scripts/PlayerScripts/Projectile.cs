@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
 public class Projectile : MonoBehaviour
 {
@@ -31,7 +33,7 @@ public class Projectile : MonoBehaviour
         // Find all objects within the explosion radius
         Collider[] hitObjects = Physics.OverlapSphere(transform.position, explosionRadius, damageableLayers);
 
-       /* foreach (Collider hit in hitObjects)
+        foreach (Collider hit in hitObjects)
         {
             // Apply damage if the object has a health component
             Health targetHealth = hit.GetComponent<Health>();
@@ -39,7 +41,7 @@ public class Projectile : MonoBehaviour
             {
                 targetHealth.TakeDamage(damage);
             }
-        }*/
+        }
     }
 
     private void OnDrawGizmosSelected()

@@ -267,5 +267,5 @@ MonoBehaviour:
   explosionEffect: {fileID: 7848535356412631754, guid: ad3e10f642263984cae1159e06c3c3dc, type: 3}
   damageableLayers:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 128
   lifetime: 5
