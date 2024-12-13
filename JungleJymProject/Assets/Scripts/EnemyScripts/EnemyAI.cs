@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using System.Collections.Generic;
 using UnityEngine.AI;
 
 public class EnemyAI : MonoBehaviour
@@ -17,11 +16,14 @@ public class EnemyAI : MonoBehaviour
     private bool isAttacking;
     private float lastAttackTime;
 
+    private Animator animator; // Animator to control animations
+
     private void Awake()
     {
         // Get references to the NavMeshAgent and Player (find the player object by tag)
         navMeshAgent = GetComponent<NavMeshAgent>();
         player = GameObject.FindGameObjectWithTag("Player").transform; // Make sure the player has the tag "Player"
+        animator = GetComponent<Animator>(); // Get the Animator component
     }
 
     private void Update()
@@ -43,8 +45,8 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                // Idle or patrol behavior (optional, can be added if desired)
-                navMeshAgent.SetDestination(transform.position); // Stop moving when out of range
+                // Idle state when the player is out of range
+                Idle();
             }
         }
     }
@@ -56,6 +58,10 @@ public class EnemyAI : MonoBehaviour
             // Set the destination of the NavMeshAgent to the player's position
             navMeshAgent.SetDestination(player.position);
             navMeshAgent.speed = movementSpeed;
+
+            // Set animator parameters
+            animator.SetFloat("speed", movementSpeed); // Set speed parameter based on movement
+            animator.SetBool("attacking", false); // Ensure attack animation is off
         }
     }
 
@@ -63,9 +69,16 @@ public class EnemyAI : MonoBehaviour
     {
         if (!isAttacking)
         {
-            // Trigger attack animation or effect here (e.g., deal damage)
+            // Trigger attack behavior
             isAttacking = true;
             lastAttackTime = Time.time;
+
+            // Stop moving while attacking
+            navMeshAgent.SetDestination(transform.position);
+
+            // Trigger attack animation
+            animator.SetFloat("speed", 0); // Stop movement animation
+            animator.SetBool("attacking", true); // Trigger attack state
 
             // Call the player's TakeDamage method (assuming PlayerHealth script is attached to the player)
             PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
@@ -74,16 +87,28 @@ public class EnemyAI : MonoBehaviour
                 playerHealth.TakeDamage(attackDamage);
             }
 
-            // You can add an attack animation trigger here if you have one
-
-            // Attack cooldown to prevent spamming
+            // Start cooldown timer
             StartCoroutine(ResetAttack());
         }
+    }
+
+    private void Idle()
+    {
+        // Stop movement and set animations to idle
+        navMeshAgent.SetDestination(transform.position); // Stop moving
+        animator.SetFloat("speed", 0); // Ensure walking animation is off
+        animator.SetBool("attacking", false); // Ensure attack animation is off
     }
 
     private IEnumerator ResetAttack()
     {
         yield return new WaitForSeconds(attackCooldown);
         isAttacking = false;
+
+        // Return to walking state if still pursuing the player
+        if (Vector3.Distance(transform.position, player.position) <= detectionRadius)
+        {
+            animator.SetBool("attacking", false);
+        }
     }
 }

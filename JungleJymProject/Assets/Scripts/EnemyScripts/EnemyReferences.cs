@@ -6,12 +6,14 @@ using UnityEngine.AI;
 public class EnemyReferences : MonoBehaviour
 {
     public NavMeshAgent navMeshAgent;
+    public Animator animator;
     public float pathUpdateDelay = 0.2f;
     
     // Start is called before the first frame update
     private void Awake()
     {
         navMeshAgent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>();
     }
 
 }
