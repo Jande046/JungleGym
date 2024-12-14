@@ -2,14 +2,15 @@ using UnityEngine;
 
 public class Health : MonoBehaviour
 {
+    public delegate void EnemyDeath();
+    public event EnemyDeath OnEnemyDeath;
+
     [SerializeField] private float maxHealth = 100f;
     private float currentHealth;
-    private WaveManager waveManager;
 
     private void Start()
     {
         currentHealth = maxHealth;
-        waveManager = FindObjectOfType<WaveManager>(); // Find the WaveManager in the scene
     }
 
     public void TakeDamage(float amount)
@@ -26,13 +27,7 @@ public class Health : MonoBehaviour
     private void Die()
     {
         Debug.Log($"{gameObject.name} has died.");
-
-        // Notify the WaveManager that an enemy has been killed
-        if (waveManager != null && gameObject.CompareTag("Enemy")) // Ensure this is an enemy
-        {
-            waveManager.EnemyKilled();
-        }
-
-        Destroy(gameObject); // Destroy the object when health reaches 0
+        OnEnemyDeath?.Invoke(); // Notify listeners (e.g., WaveManager)
+        Destroy(gameObject);
     }
 }

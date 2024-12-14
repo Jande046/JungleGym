@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -10,7 +9,8 @@ public class WaveManager : MonoBehaviour
     public GameObject[] enemyPrefabs;
     public GameObject bossPrefab;
 
-    public int[] enemiesPerWave; // Total enemies per wave (set in Inspector)
+    public int[] enemiesPerWave; // Number of enemies for each wave
+
     private int currentWave = 0;
     private int enemiesSpawned = 0;
     private int enemiesKilled = 0;
@@ -21,8 +21,7 @@ public class WaveManager : MonoBehaviour
 
     [Header("Wave Timing")]
     public float timeBetweenWaves = 5f;
-
-    private bool isSpawning = false;
+    private bool waveInProgress = false;
 
     private void Start()
     {
@@ -30,73 +29,77 @@ public class WaveManager : MonoBehaviour
         StartCoroutine(SpawnWave());
     }
 
+    private void Update()
+    {
+        // Check if all enemies for the wave are dead
+        if (waveInProgress && enemiesKilled == enemiesPerWave[currentWave])
+        {
+            waveInProgress = false;
+            StartCoroutine(StartNextWave());
+        }
+    }
+
     private IEnumerator SpawnWave()
     {
-        if (currentWave >= enemiesPerWave.Length)
-        {
-            Debug.Log("All waves completed!");
-            yield break;
-        }
-
+        waveInProgress = true;
         enemiesSpawned = 0;
         enemiesKilled = 0;
 
-        int totalEnemiesInWave = enemiesPerWave[currentWave];
         UpdateEnemyKilledUI();
 
-        isSpawning = true;
-
-        // Spawn all enemies for the wave
-        while (enemiesSpawned < totalEnemiesInWave)
+        // Spawn enemies for the current wave
+        while (enemiesSpawned < enemiesPerWave[currentWave])
         {
             SpawnEnemy();
             enemiesSpawned++;
             yield return new WaitForSeconds(0.5f); // Delay between spawns
         }
 
-        isSpawning = false;
-
-        // Wait for all enemies to be killed before proceeding to the next wave
-        while (enemiesKilled < totalEnemiesInWave)
-        {
-            yield return null;
-        }
-
-        currentWave++;
-        UpdateWaveUI();
-
-        yield return new WaitForSeconds(timeBetweenWaves);
-
-        // Spawn the next wave
-        StartCoroutine(SpawnWave());
+        Debug.Log($"Wave {currentWave + 1}: All enemies spawned.");
     }
 
-    private void SpawnEnemy()
+   private void SpawnEnemy()
+{
+    // Choose a random spawn point and enemy prefab
+    Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+    GameObject enemyPrefab = (currentWave == enemiesPerWave.Length - 1 && bossPrefab != null && enemiesSpawned == 0)
+        ? bossPrefab
+        : enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+
+    // Spawn the enemy
+    GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+
+    // Make sure the spawned enemy has a reference to the WaveManager
+    Enemy enemyScript = enemy.GetComponent<Enemy>();
+    if (enemyScript != null)
     {
-        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-        GameObject enemyPrefab;
-
-        // For the final wave, spawn a boss alongside enemies
-        if (currentWave == enemiesPerWave.Length - 1 && Random.value < 0.1f && bossPrefab != null)
-        {
-            enemyPrefab = bossPrefab; // Spawn boss occasionally during the last wave
-        }
-        else
-        {
-            enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-        }
-
-        Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
+        enemyScript.Die(); // Enemies will trigger their own death
     }
+}
 
-    public void EnemyKilled()
+
+    public void HandleEnemyDeath()
     {
         enemiesKilled++;
         UpdateEnemyKilledUI();
+    }
 
-        if (enemiesKilled >= enemiesPerWave[currentWave] && !isSpawning)
+    private IEnumerator StartNextWave()
+    {
+        Debug.Log("Starting next wave in a few seconds...");
+        yield return new WaitForSeconds(timeBetweenWaves);
+
+        currentWave++;
+
+        // Check if there are more waves
+        if (currentWave < enemiesPerWave.Length)
         {
-            Debug.Log("Wave complete!");
+            UpdateWaveUI();
+            StartCoroutine(SpawnWave());
+        }
+        else
+        {
+            Debug.Log("All waves completed!");
         }
     }
 
