@@ -1,12 +1,14 @@
 using UnityEngine;
-
+using System.Collections;
+using System.Collections.Generic;
 public class Health : MonoBehaviour
 {
-    public delegate void EnemyDeath();
-    public event EnemyDeath OnEnemyDeath;
+    public delegate void EnemyDeathDelegate();
+    public event EnemyDeathDelegate OnEnemyDeath;
 
     [SerializeField] private float maxHealth = 100f;
     private float currentHealth;
+    private bool isDead = false;
 
     private void Start()
     {
@@ -26,8 +28,11 @@ public class Health : MonoBehaviour
 
     private void Die()
     {
+        if (isDead) return;
+        isDead = true;
+
         Debug.Log($"{gameObject.name} has died.");
-        OnEnemyDeath?.Invoke(); // Notify listeners (e.g., WaveManager)
+        OnEnemyDeath?.Invoke();
         Destroy(gameObject);
     }
 }
