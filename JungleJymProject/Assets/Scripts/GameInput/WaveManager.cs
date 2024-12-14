@@ -60,6 +60,12 @@ public class WaveManager : MonoBehaviour
 
    private void SpawnEnemy()
 {
+    if (spawnPoints.Length == 0 || enemyPrefabs.Length == 0)
+    {
+        Debug.LogError("No spawn points or enemy prefabs assigned!");
+        return;
+    }
+
     // Choose a random spawn point and enemy prefab
     Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
     GameObject enemyPrefab = (currentWave == enemiesPerWave.Length - 1 && bossPrefab != null && enemiesSpawned == 0)
@@ -69,12 +75,14 @@ public class WaveManager : MonoBehaviour
     // Spawn the enemy
     GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
 
-    // Make sure the spawned enemy has a reference to the WaveManager
-    Enemy enemyScript = enemy.GetComponent<Enemy>();
-    if (enemyScript != null)
+    // Subscribe to the enemy's death event (assuming the Health script is used)
+    Health enemyHealth = enemy.GetComponent<Health>();
+    if (enemyHealth != null)
     {
-        enemyScript.Die(); // Enemies will trigger their own death
+        enemyHealth.OnEnemyDeath += HandleEnemyDeath;
     }
+
+    Debug.Log($"Spawned enemy at {spawnPoint.position}. Current wave: {currentWave + 1}, Enemies spawned: {enemiesSpawned + 1}");
 }
 
 
@@ -85,23 +93,24 @@ public class WaveManager : MonoBehaviour
     }
 
     private IEnumerator StartNextWave()
+{
+    Debug.Log("Starting next wave in a few seconds...");
+    yield return new WaitForSeconds(timeBetweenWaves);
+
+    currentWave++;
+
+    // Check if there are more waves
+    if (currentWave < enemiesPerWave.Length)
     {
-        Debug.Log("Starting next wave in a few seconds...");
-        yield return new WaitForSeconds(timeBetweenWaves);
-
-        currentWave++;
-
-        // Check if there are more waves
-        if (currentWave < enemiesPerWave.Length)
-        {
-            UpdateWaveUI();
-            StartCoroutine(SpawnWave());
-        }
-        else
-        {
-            Debug.Log("All waves completed!");
-        }
+        UpdateWaveUI();
+        StartCoroutine(SpawnWave());
     }
+    else
+    {
+        EndGame(); // Call EndGame when all waves are completed
+    }
+}
+
 
     private void UpdateWaveUI()
     {
@@ -112,4 +121,17 @@ public class WaveManager : MonoBehaviour
     {
         enemiesKilledText.text = $"{enemiesKilled}/{enemiesPerWave[currentWave]}";
     }
+
+    private void EndGame()
+{
+    Debug.Log("All waves completed! Game Over.");
+    waveCounterText.text = "Game Over!"; // Update the wave counter UI to indicate the game has ended
+    enemiesKilledText.text = "";        // Clear the enemies killed text
+
+    // Additional logic for ending the game (e.g., showing a menu, stopping gameplay, etc.)
+    Time.timeScale = 0; // Pause the game (optional)
+}
+
+
+
 }
